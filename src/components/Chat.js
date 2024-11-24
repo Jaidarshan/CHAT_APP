@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { db, auth } from "../firebase-config";
 import {
   collection,
@@ -15,7 +15,10 @@ import "../styles/Chat.css";
 export const Chat = ({ room }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [showScrollButton, setShowScrollButton] = useState(false);
   const messagesRef = collection(db, "messages");
+  const messagesEndRef = useRef(null);
+  const messagesContainerRef = useRef(null);
 
   useEffect(() => {
     const queryMessages = query(
@@ -33,6 +36,29 @@ export const Chat = ({ room }) => {
 
     return () => unsuscribe();
   }, [room]);
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const handleScroll = () => {
+    const messagesContainer = messagesContainerRef.current;
+    if (!messagesContainer) return;
+
+    const isAtBottom =
+      Math.abs(
+        messagesContainer.scrollHeight -
+        messagesContainer.scrollTop -
+        messagesContainer.clientHeight
+      ) < 5;
+
+    setShowScrollButton(!isAtBottom);
+  };
+
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -53,21 +79,37 @@ export const Chat = ({ room }) => {
       <div className="room-header">
         <h2>Room: {room.toUpperCase()}</h2>
       </div>
-      <div className="messages">
+      <div
+        className="messages"
+        onScroll={handleScroll}
+        ref={messagesContainerRef}
+      >
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`message ${
-              message.user === auth.currentUser.displayName
-                ? "current-user"
-                : "other-user"
-            }`}
+            className={`message ${message.user === auth.currentUser.displayName
+              ? "current-user"
+              : "other-user"
+              }`}
           >
             <span className="user">{message.user}:</span>
             <span>{message.text}</span>
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
+      {showScrollButton && (
+        <button
+          className="scroll-to-bottom-button"
+          onClick={scrollToBottom}
+        >
+          <img
+            src="/downarraowicon.jpg"
+            className="down-arrow"
+            alt="Scroll Down"
+          />
+        </button>
+      )}
       <form onSubmit={handleSubmit} className="new-message-form">
         <input
           type="text"
@@ -77,7 +119,7 @@ export const Chat = ({ room }) => {
           placeholder="Type your message here..."
         />
         <button type="submit" className="send-button">
-          Send
+          <img src="/send_icon_white.png" className="send-icon" />
         </button>
       </form>
     </div>
