@@ -9,6 +9,7 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
+import {format} from "date-fns";
 
 import "../styles/Chat.css";
 
@@ -74,6 +75,31 @@ export const Chat = ({ room }) => {
     setNewMessage("");
   };
 
+  const formatTimestamp = (timestamp) => {
+    if (!timestamp) return ""; 
+    const date = timestamp.toDate(); 
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); 
+  };  
+
+  const formatDate = (timestamp) => {
+    if (!timestamp) return "";
+    const date = timestamp.toDate();
+    return format(date, "MMMM dd, yyyy");
+  };
+
+  const groupMessagesByDate = (messages) => {
+    return messages.reduce((groups, message) => {
+      const date = formatDate(message.createdAt);
+      if (!groups[date]) {
+        groups[date] = [];
+      }
+      groups[date].push(message);
+      return groups;
+    }, {});
+  };
+
+  const groupedMessages = groupMessagesByDate(messages);
+
   return (
     <div className="chat-app">
       <div className="room-header">
@@ -84,16 +110,27 @@ export const Chat = ({ room }) => {
         onScroll={handleScroll}
         ref={messagesContainerRef}
       >
-        {messages.map((message) => (
-          <div
-            key={message.id}
-            className={`message ${message.user === auth.currentUser.displayName
-              ? "current-user"
-              : "other-user"
-              }`}
-          >
-            <span className="user">{message.user}:</span>
-            <span>{message.text}</span>
+        {Object.keys(groupedMessages).map((date) => (
+          <div key={date}>
+            {/* Date Header */}
+            <div className="date-header">{date}</div>
+            {/* Messages for this Date */}
+            {groupedMessages[date].map((message) => (
+              <div
+                key={message.id}
+                className={`message ${
+                  message.user === auth.currentUser.displayName
+                    ? "current-user"
+                    : "other-user"
+                }`}
+              >
+                <span className="user">{message.user}:</span>
+                <span>{message.text}</span>
+                <span className="timestamp">
+                  {formatTimestamp(message.createdAt)}
+                </span>
+              </div>
+            ))}
           </div>
         ))}
         <div ref={messagesEndRef} />
