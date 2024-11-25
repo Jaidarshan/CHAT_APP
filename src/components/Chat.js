@@ -9,7 +9,7 @@ import {
   query,
   orderBy,
 } from "firebase/firestore";
-import {format} from "date-fns";
+import { format } from "date-fns";
 
 import "../styles/Chat.css";
 
@@ -76,10 +76,10 @@ export const Chat = ({ room }) => {
   };
 
   const formatTimestamp = (timestamp) => {
-    if (!timestamp) return ""; 
-    const date = timestamp.toDate(); 
-    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }); 
-  };  
+    if (!timestamp) return "";
+    const date = timestamp.toDate();
+    return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  };
 
   const formatDate = (timestamp) => {
     if (!timestamp) return "";
@@ -118,11 +118,10 @@ export const Chat = ({ room }) => {
             {groupedMessages[date].map((message) => (
               <div
                 key={message.id}
-                className={`message ${
-                  message.user === auth.currentUser.displayName
+                className={`message ${message.user === auth.currentUser.displayName
                     ? "current-user"
                     : "other-user"
-                }`}
+                  }`}
               >
                 <span className="user">{message.user}:</span>
                 <span>{message.text}</span>
