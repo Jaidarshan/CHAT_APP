@@ -113,14 +113,14 @@ export const Chat = ({ room }) => {
         {Object.keys(groupedMessages).map((date) => (
           <div key={date}>
             {/* Date Header */}
-            <div className="date-header">{date}</div>
+            <center><div className="date-header">{date}</div></center>
             {/* Messages for this Date */}
             {groupedMessages[date].map((message) => (
               <div
                 key={message.id}
                 className={`message ${message.user === auth.currentUser.displayName
-                    ? "current-user"
-                    : "other-user"
+                  ? "current-user"
+                  : "other-user"
                   }`}
               >
                 <span className="user">{message.user}:</span>
