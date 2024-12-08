@@ -177,3 +177,19 @@ main {
 .send-button:hover {
   background-color: #357abd;
 }
+
+.signout-button {
+  display: flex;
+  align-items: center;
+  border: none;
+  cursor: pointer;
+}
+
+.sign-out-button {
+  display: flex;
+  align-items: center;
+}
+
+.signout-image {
+  margin-left: 8px; /* Adds space between the text and the image */
+}

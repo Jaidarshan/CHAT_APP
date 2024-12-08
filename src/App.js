@@ -40,8 +40,12 @@ function ChatApp() {
         <h1>Chat Application</h1>
         {isAuth && (
           <button className="signout-button" onClick={handleSignOut}>
+          <div className="sign-out-button">
             Sign Out
-          </button>
+            <img src="./logout.jpg" width="20px" alt="sign out button" className="signout-image" />
+          </div>
+        </button>
+        
         )}
       </header>
       <main>
