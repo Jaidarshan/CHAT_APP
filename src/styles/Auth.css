@@ -29,3 +29,9 @@
 .auth button:hover {
   background-color: #357abd;
 }
+
+.error-message {
+  color: red;
+  font-size: 14px;
+  margin-top: 10px;
+}

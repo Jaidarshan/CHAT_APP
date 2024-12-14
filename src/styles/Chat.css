@@ -244,3 +244,84 @@ body {
   border-radius: 5px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
+
+/* Sliding Panel */
+.room-panel {
+  position: fixed;
+  top: 0;
+  left: -250px;
+  width: 250px;
+  height: 100%;
+  background-color: #2c3e50;
+  color: white;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
+  overflow-y: auto;
+  transition: left 0.3s ease;
+  z-index: 1000;
+}
+
+.room-panel.open {
+  left: 0;
+}
+
+.room-list {
+  padding: 20px;
+}
+
+.room-list ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.room-list li {
+  padding: 10px;
+  margin: 5px 0;
+  background-color: #34495e;
+  cursor: pointer;
+  border-radius: 5px;
+  text-align: center;
+}
+
+.room-list li.active-room {
+  background-color: #16a085;
+}
+
+.room-list li:hover {
+  background-color: #1abc9c;
+}
+
+/* Close Panel Button */
+.close-panel-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: white;
+  background-color: transparent;
+  border: none;
+  font-size: 30px;
+  cursor: pointer;
+}
+
+/* Room Header */
+.room-header {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.room-toggle-container {
+  position: absolute;
+  left: 10px;
+}
+
+/* Toggle Button */
+.toggle-panel-button {
+  padding: 10px;
+  background-color: #2980b9;
+  color: white;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+/* Rest of your chat app CSS */
