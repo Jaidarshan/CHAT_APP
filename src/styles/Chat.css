@@ -317,7 +317,7 @@ body {
 /* Toggle Button */
 .toggle-panel-button {
   padding: 10px;
-  background-color: #2980b9;
+  background-color: transparent;
   color: white;
   border: none;
   cursor: pointer;

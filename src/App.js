@@ -36,6 +36,7 @@ function ChatApp() {
 
     // Proceed to chat for the given room
     setIsInChat(true);
+    setRoom(room.trim());
   };
 
   // Handle sign-out

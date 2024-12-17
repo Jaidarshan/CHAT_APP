@@ -13,14 +13,13 @@ import {
 import { format } from "date-fns";
 import "../styles/Chat.css";
 
-export const Chat = () => {
+export const Chat = ({ room }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [showScrollButton, setShowScrollButton] = useState(false);
   const [rooms, setRooms] = useState([]); // List of all available rooms
-  const [currentRoom, setCurrentRoom] = useState(""); // Currently selected room
+  const [currentRoom, setCurrentRoom] = useState(room || ""); // Currently selected room
   const [isPanelOpen, setIsPanelOpen] = useState(false); // State for the sliding panel
-  const [newRoomName, setNewRoomName] = useState(""); // New room name input
 
   const messagesRef = collection(db, "messages");
   const messagesEndRef = useRef(null);
@@ -38,9 +37,6 @@ export const Chat = () => {
         }
       });
       setRooms([...roomSet]); // Convert Set to Array
-      if (roomSet.size > 0) {
-        setCurrentRoom([...roomSet][0]); // Set the first room as default
-      }
     };
 
     fetchRooms();
@@ -111,28 +107,6 @@ export const Chat = () => {
     setNewMessage("");
   };
 
-  // Handle room creation
-  const handleCreateRoom = async (event) => {
-    event.preventDefault();
-    const trimmedRoomName = newRoomName.trim();
-
-    if (!trimmedRoomName) {
-      alert("Room name cannot be empty!");
-      return;
-    }
-
-    // Create a new room by adding a message with that room name
-    await addDoc(messagesRef, {
-      text: `Welcome to the ${trimmedRoomName} room!`,
-      createdAt: serverTimestamp(),
-      user: "System",
-      room: trimmedRoomName,
-    });
-
-    setNewRoomName(""); // Reset room name input
-    setIsPanelOpen(false); // Close panel after room is created
-  };
-
   // Format timestamp for display
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "";
@@ -170,33 +144,19 @@ export const Chat = () => {
         <div className="room-list">
           <h3>Available Rooms</h3>
           <ul>
-            {rooms.map((room) => (
+            {rooms.map((roomName) => (
               <li
-                key={room}
-                className={room === currentRoom ? "active-room" : ""}
+                key={roomName}
+                className={roomName === currentRoom ? "active-room" : ""}
                 onClick={() => {
-                  setCurrentRoom(room);
+                  setCurrentRoom(roomName);
                   setIsPanelOpen(false); // Close the panel after selecting a room
                 }}
               >
-                {room}
+                {roomName}
               </li>
             ))}
           </ul>
-        </div>
-
-        {/* New Room Creation */}
-        <div className="new-room-container">
-          <h3>Create a New Room</h3>
-          <form onSubmit={handleCreateRoom}>
-            <input
-              type="text"
-              value={newRoomName}
-              onChange={(e) => setNewRoomName(e.target.value)}
-              placeholder="Room Name"
-            />
-            <button type="submit">Create Room</button>
-          </form>
         </div>
       </div>
 
@@ -209,7 +169,7 @@ export const Chat = () => {
               className="toggle-panel-button"
               onClick={() => setIsPanelOpen(true)}
             >
-              Open Rooms
+              <img src="/menu-bar.jpg" alt="Menu bar" width='32px'/>
             </button>
           )}
         </div>
@@ -222,8 +182,8 @@ export const Chat = () => {
         ref={messagesContainerRef}
         onScroll={() =>
           setShowScrollButton(
-            messagesContainerRef.current.scrollHeight -
-              messagesContainerRef.current.scrollTop >
+            messagesContainerRef.current.scrollHeight - 
+              messagesContainerRef.current.scrollTop > 
               messagesContainerRef.current.clientHeight + 10
           )
         }
@@ -250,8 +210,8 @@ export const Chat = () => {
                 </div>
                 <div className="message-text">{message.text}</div>
                 <span className="timestamp">
-                    {formatTimestamp(message.createdAt)}
-                  </span>
+                  {formatTimestamp(message.createdAt)}
+                </span>
               </div>
             ))}
           </div>
@@ -279,7 +239,7 @@ export const Chat = () => {
           placeholder="Type your message here..."
         />
         <button type="submit" className="send-button">
-          <img src="send_icon_white.png" alt="send button" width='32px'/>
+          Send
         </button>
       </form>
     </div>
