@@ -245,7 +245,6 @@ body {
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
-/* Sliding Panel */
 .room-panel {
   position: fixed;
   top: 0;
@@ -290,7 +289,6 @@ body {
   background-color: #1abc9c;
 }
 
-/* Close Panel Button */
 .close-panel-button {
   position: absolute;
   top: 10px;
@@ -302,7 +300,6 @@ body {
   cursor: pointer;
 }
 
-/* Room Header */
 .room-header {
   display: flex;
   justify-content: center;
@@ -314,7 +311,6 @@ body {
   left: 10px;
 }
 
-/* Toggle Button */
 .toggle-panel-button {
   padding: 10px;
   background-color: transparent;
@@ -324,4 +320,33 @@ body {
   border-radius: 5px;
 }
 
-/* Rest of your chat app CSS */
+.create-room {
+  margin-top: 20px;
+  padding: 20px;
+}
+
+.new-room-input {
+  width: 90%;
+  padding: 8px;
+  margin-bottom: 10px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.create-room-button {
+  background-color: #007bff;
+  color: white;
+  border: none;
+  padding: 8px 12px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+
+.create-room-button:hover {
+  background-color: #0056b3;
+}
+
+p {
+  color: red;
+  font-size: 14px;
+}

@@ -3,8 +3,8 @@ import { Chat } from "./components/Chat";
 import { Auth } from "./components/Auth.js";
 import Cookies from "universal-cookie";
 import { signOut } from "firebase/auth";
-import { auth, db } from "./firebase-config"; // Import Firestore db
-import { doc, getDoc, setDoc } from "firebase/firestore"; // Import Firestore methods
+import { auth, db } from "./firebase-config"; 
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import "./App.css";
 
 const cookies = new Cookies();
@@ -15,31 +15,26 @@ function ChatApp() {
   const [room, setRoom] = useState("");
   const [error, setError] = useState("");
 
-  // Handle entering the chat or creating a new room
   const handleEnterChat = async () => {
     if (room.trim() === "") {
       setError("Room name cannot be empty!");
       return;
     }
 
-    // Check if the room exists in Firestore
     const roomRef = doc(db, "rooms", room.trim());
     const roomSnap = await getDoc(roomRef);
 
     if (!roomSnap.exists()) {
-      // Room doesn't exist, so create a new room
       await setDoc(roomRef, {
         createdAt: new Date(),
         creator: auth.currentUser.displayName,
       });
     }
 
-    // Proceed to chat for the given room
     setIsInChat(true);
     setRoom(room.trim());
   };
 
-  // Handle sign-out
   const handleSignOut = async () => {
     await signOut(auth);
     cookies.remove("auth-token");

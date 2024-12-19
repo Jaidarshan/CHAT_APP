@@ -8,7 +8,7 @@ import {
   onSnapshot,
   query,
   orderBy,
-  getDocs,
+  getDocs
 } from "firebase/firestore";
 import { format } from "date-fns";
 import "../styles/Chat.css";
@@ -17,15 +17,17 @@ export const Chat = ({ room }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [showScrollButton, setShowScrollButton] = useState(false);
-  const [rooms, setRooms] = useState([]); // List of all available rooms
-  const [currentRoom, setCurrentRoom] = useState(room || ""); // Currently selected room
-  const [isPanelOpen, setIsPanelOpen] = useState(false); // State for the sliding panel
+  const [rooms, setRooms] = useState([]);
+  const [currentRoom, setCurrentRoom] = useState(room || "");
+  const [isPanelOpen, setIsPanelOpen] = useState(false);
 
   const messagesRef = collection(db, "messages");
   const messagesEndRef = useRef(null);
   const messagesContainerRef = useRef(null);
 
-  // Fetch available rooms on component mount and listen for updates
+  const [newRoomName, setNewRoomName] = useState("");
+  const [error, setError] = useState("");
+
   useEffect(() => {
     const fetchRooms = async () => {
       const messagesSnapshot = await getDocs(messagesRef);
@@ -36,12 +38,11 @@ export const Chat = ({ room }) => {
           roomSet.add(data.room);
         }
       });
-      setRooms([...roomSet]); // Convert Set to Array
+      setRooms([...roomSet]);
     };
 
     fetchRooms();
 
-    // Listen for new rooms in real-time
     const unsubscribe = onSnapshot(messagesRef, (snapshot) => {
       const roomSet = new Set();
       snapshot.forEach((doc) => {
@@ -50,13 +51,12 @@ export const Chat = ({ room }) => {
           roomSet.add(data.room);
         }
       });
-      setRooms([...roomSet]); // Update rooms list
+      setRooms([...roomSet]);
     });
 
     return () => unsubscribe();
   }, []);
 
-  // Fetch messages for the selected room
   useEffect(() => {
     if (!currentRoom) return;
 
@@ -77,17 +77,14 @@ export const Chat = ({ room }) => {
     return () => unsubscribe();
   }, [currentRoom]);
 
-  // Scroll to bottom when messages change
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
-  // Scroll to the bottom of the chat
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  // Handle sending a new message
   const handleSubmit = async (event) => {
     event.preventDefault();
     const trimmedMessage = newMessage.trim();
@@ -107,21 +104,18 @@ export const Chat = ({ room }) => {
     setNewMessage("");
   };
 
-  // Format timestamp for display
   const formatTimestamp = (timestamp) => {
     if (!timestamp) return "";
     const date = timestamp.toDate();
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  // Format date for grouping messages
   const formatDate = (timestamp) => {
     if (!timestamp) return "";
     const date = timestamp.toDate();
     return format(date, "MMMM dd, yyyy");
   };
 
-  // Group messages by date
   const groupMessagesByDate = (messages) =>
     messages.reduce((groups, message) => {
       const date = formatDate(message.createdAt);
@@ -133,6 +127,37 @@ export const Chat = ({ room }) => {
     }, {});
 
   const groupedMessages = groupMessagesByDate(messages);
+
+  const handleCreateRoom = async () => {
+    const trimmedRoomName = newRoomName.trim();
+    if (!trimmedRoomName) {
+      setError("Room name cannot be empty!");
+      return;
+    }
+  
+    // Check if the room already exists in the "rooms" collection
+    const roomsCollectionRef = collection(db, "rooms");
+    const roomQuery = query(roomsCollectionRef, where("name", "==", trimmedRoomName));
+    const querySnapshot = await getDocs(roomQuery);
+  
+    if (!querySnapshot.empty) {
+      setError("Room already exists!");
+      return;
+    }
+  
+    // Create a new room document
+    await addDoc(roomsCollectionRef, {
+      name: trimmedRoomName,
+      createdAt: new Date(),
+      creator: auth.currentUser.displayName,
+    });
+  
+    setRooms((prevRooms) => [...prevRooms, trimmedRoomName]);
+    setNewRoomName("");
+    setError("");
+    alert(`Room "${trimmedRoomName}" created successfully!`);
+  };
+  
 
   return (
     <div className="chat-app">
@@ -150,7 +175,7 @@ export const Chat = ({ room }) => {
                 className={roomName === currentRoom ? "active-room" : ""}
                 onClick={() => {
                   setCurrentRoom(roomName);
-                  setIsPanelOpen(false); // Close the panel after selecting a room
+                  setIsPanelOpen(false);
                 }}
               >
                 {roomName}
@@ -158,6 +183,24 @@ export const Chat = ({ room }) => {
             ))}
           </ul>
         </div>
+        <div className="create-room">
+          <h4>Create New Room</h4>
+          <input
+            type="text"
+            placeholder="Enter room name"
+            value={newRoomName}
+            onChange={(e) => {
+              setNewRoomName(e.target.value);
+              setError("");
+            }}
+            className="new-room-input"
+          />
+          <button onClick={handleCreateRoom} className="create-room-button">
+            Create
+          </button>
+          {error && <p style={{ color: "red" }}>{error}</p>}
+        </div>
+
       </div>
 
       {/* Room Header */}
@@ -169,7 +212,7 @@ export const Chat = ({ room }) => {
               className="toggle-panel-button"
               onClick={() => setIsPanelOpen(true)}
             >
-              <img src="/menu-bar.jpg" alt="Menu bar" width='32px'/>
+              <img src="/menu-bar.jpg" alt="Menu bar" width='32px' />
             </button>
           )}
         </div>
@@ -182,9 +225,9 @@ export const Chat = ({ room }) => {
         ref={messagesContainerRef}
         onScroll={() =>
           setShowScrollButton(
-            messagesContainerRef.current.scrollHeight - 
-              messagesContainerRef.current.scrollTop > 
-              messagesContainerRef.current.clientHeight + 10
+            messagesContainerRef.current.scrollHeight -
+            messagesContainerRef.current.scrollTop >
+            messagesContainerRef.current.clientHeight + 10
           )
         }
       >
@@ -199,11 +242,10 @@ export const Chat = ({ room }) => {
             {groupedMessages[date].map((message) => (
               <div
                 key={message.id}
-                className={`message ${
-                  message.user === auth.currentUser.displayName
-                    ? "current-user"
-                    : "other-user"
-                }`}
+                className={`message ${message.user === auth.currentUser.displayName
+                  ? "current-user"
+                  : "other-user"
+                  }`}
               >
                 <div className="message-header">
                   <span className="user">{message.user}</span>
@@ -225,7 +267,7 @@ export const Chat = ({ room }) => {
           className="scroll-to-bottom-button"
           onClick={scrollToBottom}
         >
-          <img src="/downarraowicon.jpg" alt="scroll down" width='24px'/>
+          <img src="/downarraowicon.jpg" alt="scroll down" width='24px' />
         </button>
       )}
 
@@ -239,7 +281,7 @@ export const Chat = ({ room }) => {
           placeholder="Type your message here..."
         />
         <button type="submit" className="send-button">
-          Send
+          <img src="send_icon_white.png" alt="send button" width='32px' />
         </button>
       </form>
     </div>
