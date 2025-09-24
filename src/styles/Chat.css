@@ -4,6 +4,8 @@
   flex-direction: column;
   height: 100%;
   background-color: #e5ddd5;
+  overflow: hidden;
+  position: relative;
 }
 
 .chat-header {
@@ -24,6 +26,7 @@
   padding: 20px;
   display: flex;
   flex-direction: column;
+  scroll-behavior: smooth;
 }
 
 .date-separator {
@@ -124,4 +127,35 @@
 
 .clear-chat-btn:hover {
   background-color: #d32f2f;
+}
+
+.scroll-to-bottom-btn {
+  position: absolute;
+  bottom: 70px;
+  right: 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 16px;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-size: 0.9em;
+  z-index: 10;
+  animation: slideUp 0.3s ease-out;
+}
+
+.scroll-to-bottom-btn:hover {
+  background-color: #0056b3;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }

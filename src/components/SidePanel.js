@@ -21,7 +21,7 @@ export const SidePanel = ({ onSelectChat, onCreateRoom, currentChat }) => {
         const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
             const userList = snapshot.docs
                 .map(doc => doc.data())
-                .filter(user => user.uid !== auth.currentUser.uid); // Exclude self
+                .filter(user => auth.currentUser && user.uid !== auth.currentUser.uid); // Exclude self
             setUsers(userList);
         });
         
