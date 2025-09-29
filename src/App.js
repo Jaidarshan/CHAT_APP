@@ -1,23 +1,22 @@
-// src/App.js
-
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Auth } from "./components/Auth.js";
 import { MainLayout } from "./components/MainLayout.js";
-import Cookies from "universal-cookie";
+import { auth } from "./firebase-config.js";
 import "./App.css";
 
-const cookies = new Cookies();
-
 function ChatApp() {
-  const [isAuth, setIsAuth] = useState(cookies.get("auth-token"));
+  const [user, setUser] = useState(null);
 
-  if (!isAuth) {
-    // If not authenticated, show the login screen
-    return <Auth setIsAuth={setIsAuth} />;
+  useEffect(() => {
+    const unsubscribe = auth.onAuthStateChanged(setUser);
+    return () => unsubscribe();
+  }, []);
+
+  if (!user) {
+    return <Auth />;
   }
 
-  // If authenticated, show the main application layout
-  return <MainLayout setIsAuth={setIsAuth} />;
+  return <MainLayout />;
 }
 
 export default ChatApp;

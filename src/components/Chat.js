@@ -29,7 +29,6 @@ export const Chat = ({ room, header }) => {
   useEffect(() => {
   if (!room) return;
 
-  // Reset auto-scroll when changing rooms
   setShouldAutoScroll(true);
   setHasUnreadMessages(false);
 
@@ -39,20 +38,17 @@ export const Chat = ({ room, header }) => {
     const currentUser = auth.currentUser;
     if (!currentUser) return;
 
-    // 1. Get the user's "cleared at" timestamp for this specific room
     const userMetadataRef = doc(db, "userChatMetadata", currentUser.uid);
     const userMetadataSnap = await getDoc(userMetadataRef);
     const userMetadata = userMetadataSnap.data();
     const clearTimestamp = userMetadata?.clearedTimestamps?.[room] || null;
 
-    // 2. Build the query for messages
     let messagesQuery = query(
       messagesRef,
       where("room", "==", room),
       orderBy("createdAt")
     );
 
-    // 3. If a clear timestamp exists, only fetch messages created AFTER it
     if (clearTimestamp) {
       messagesQuery = query(
         messagesRef,
@@ -61,8 +57,7 @@ export const Chat = ({ room, header }) => {
         orderBy("createdAt")
       );
     }
-    
-    // 4. Attach the listener
+
     unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
       const fetchedMessages = snapshot.docs.map((doc) => ({
         ...doc.data(),
@@ -74,7 +69,6 @@ export const Chat = ({ room, header }) => {
 
   subscribeToMessages();
 
-  // Cleanup function to detach the listener when the component unmounts or room changes
   return () => {
     if (unsubscribe) {
       unsubscribe();
@@ -83,20 +77,17 @@ export const Chat = ({ room, header }) => {
 }, [room, messagesRef]);
 
   useEffect(() => {
-    // Check if user is near the bottom before auto-scrolling
     const isNearBottom = () => {
       if (!messagesListRef.current) return true;
       const { scrollTop, scrollHeight, clientHeight } = messagesListRef.current;
       const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-      return distanceFromBottom < 100; // Within 100px of bottom
+      return distanceFromBottom < 100;
     };
 
-    // Only auto-scroll if user is near the bottom or it's the first load
     if (shouldAutoScroll && (isNearBottom() || messages.length === 0)) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
       setHasUnreadMessages(false);
     } else if (!shouldAutoScroll && !isNearBottom()) {
-      // Show unread indicator if new messages arrive while user is scrolled up
       setHasUnreadMessages(true);
     }
   }, [messages, shouldAutoScroll]);
@@ -105,7 +96,6 @@ export const Chat = ({ room, header }) => {
     event.preventDefault();
     if (newMessage.trim() === "") return;
 
-    // When user sends a message, always scroll to bottom
     setShouldAutoScroll(true);
 
     await addDoc(messagesRef, {
@@ -120,33 +110,27 @@ export const Chat = ({ room, header }) => {
 
   const formatDate = (timestamp) => timestamp ? format(timestamp.toDate(), "MMMM dd, yyyy") : "";
   const formatTime = (timestamp) => timestamp ? timestamp.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
-  
-  // Handle scroll events to determine if user is scrolling up
+
   const handleScroll = () => {
     if (!messagesListRef.current) return;
     
     const { scrollTop, scrollHeight, clientHeight } = messagesListRef.current;
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
-    
-    // If user scrolled away from bottom, disable auto-scroll
-    // If user scrolled back to near bottom, enable auto-scroll
+
     const nearBottom = distanceFromBottom < 100;
     setShouldAutoScroll(nearBottom);
-    
-    // Clear unread indicator when user scrolls to bottom
+
     if (nearBottom) {
       setHasUnreadMessages(false);
     }
   };
 
-  // Scroll to bottom when "scroll to bottom" button is clicked
   const scrollToBottom = () => {
     setShouldAutoScroll(true);
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     setHasUnreadMessages(false);
   };
 
-  // Add scroll event listener when component mounts/room changes
   useEffect(() => {
     const messagesContainer = messagesListRef.current;
     if (messagesContainer) {
@@ -163,7 +147,6 @@ export const Chat = ({ room, header }) => {
   }, {});
 
   const handleClearChat = async () => {
-    // Confirm with the user before clearing
     const isConfirmed = window.confirm(
       "Are you sure you want to clear the chat history? This cannot be undone."
     );
@@ -175,18 +158,15 @@ export const Chat = ({ room, header }) => {
       const userMetadataRef = doc(db, "userChatMetadata", currentUser.uid);
 
       try {
-        // We use setDoc with merge: true to avoid overwriting other room timestamps.
-        // This will create the document if it doesn't exist, or update it if it does.
         await setDoc(
           userMetadataRef,
           {
             clearedTimestamps: {
-              [room]: serverTimestamp(), // Using computed property name for the room ID
+              [room]: serverTimestamp(),
             },
           },
-          { merge: true } // IMPORTANT: This merges the new data with existing data
+          { merge: true } 
         );
-        // After clearing, the useEffect fetching messages will automatically refetch an empty list.
         alert("Chat history has been cleared for you.");
       } catch (error) {
         console.error("Error clearing chat history: ", error);
@@ -224,7 +204,6 @@ export const Chat = ({ room, header }) => {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Scroll to bottom button */}
       {hasUnreadMessages && (
         <button 
           className="scroll-to-bottom-btn" 

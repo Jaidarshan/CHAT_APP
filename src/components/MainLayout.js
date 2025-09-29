@@ -10,18 +10,16 @@ import { CreateRoomModal } from './CreateRoomModal';
 
 const cookies = new Cookies();
 
-export const MainLayout = ({ setIsAuth }) => {
-    const [currentChat, setCurrentChat] = useState(null); // e.g., 'room-name' or 'uid1_uid2'
+export const MainLayout = () => {
+    const [currentChat, setCurrentChat] = useState(null);
     const [chatHeader, setChatHeader] = useState("Select a chat to begin");
     const [isModalOpen, setIsModalOpen] = useState(false);
 
     const handleSignOut = async () => {
         await signOut(auth);
         cookies.remove("auth-token");
-        setIsAuth(false);
     };
 
-    // This function is passed to the SidePanel to update the active chat
     const selectChat = (chatId, chatName) => {
         setCurrentChat(chatId);
         setChatHeader(chatName);
@@ -58,7 +56,7 @@ export const MainLayout = ({ setIsAuth }) => {
                 <CreateRoomModal 
                     onClose={() => setIsModalOpen(false)} 
                     onRoomCreated={(roomName) => {
-                        selectChat(roomName, `# ${roomName}`); // Automatically switch to the new room
+                        selectChat(roomName, `# ${roomName}`);
                         setIsModalOpen(false);
                     }}
                 />

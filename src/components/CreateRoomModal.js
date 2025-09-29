@@ -28,7 +28,7 @@ export const CreateRoomModal = ({ onClose, onRoomCreated }) => {
                 createdAt: serverTimestamp(),
                 creator: auth.currentUser.displayName,
             });
-            onRoomCreated(trimmedName); // Notify parent component
+            onRoomCreated(trimmedName);
         }
     };
 

@@ -10,13 +10,11 @@ export const SidePanel = ({ onSelectChat, onCreateRoom, currentChat }) => {
     const [users, setUsers] = useState([]);
 
     useEffect(() => {
-        // Fetch public rooms
         const roomsQuery = query(collection(db, "rooms"), orderBy("name"));
         const unsubscribeRooms = onSnapshot(roomsQuery, (snapshot) => {
             setRooms(snapshot.docs.map(doc => doc.data().name).filter(Boolean));
         });
 
-        // Fetch users
         const usersQuery = query(collection(db, "users"), orderBy("displayName"));
         const unsubscribeUsers = onSnapshot(usersQuery, (snapshot) => {
             const userList = snapshot.docs

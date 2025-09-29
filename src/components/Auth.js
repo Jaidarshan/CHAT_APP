@@ -1,23 +1,23 @@
-// components/Auth.js
+// src/components/Auth.js
 
-import { auth, provider, db } from "../firebase-config.js"; // Import db
+import { auth, provider, db } from "../firebase-config.js";
 import { signInWithPopup } from "firebase/auth";
-import { doc, setDoc } from "firebase/firestore"; // Import doc and setDoc
+import { doc, setDoc } from "firebase/firestore";
 import "../styles/Auth.css";
 import Cookies from "universal-cookie";
 import { useState } from "react";
 
 const cookies = new Cookies();
 
-export const Auth = ({ setIsAuth }) => {
+export const Auth = () => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const signInWithGoogle = async () => {
     try {
+      provider.setCustomParameters({ prompt: 'select_account' });
+      
       const result = await signInWithPopup(auth, provider);
       cookies.set("auth-token", result.user.refreshToken);
-
-      // --- NEW: Add user to Firestore 'users' collection ---
       const userRef = doc(db, "users", result.user.uid);
       await setDoc(
         userRef,
@@ -27,14 +27,14 @@ export const Auth = ({ setIsAuth }) => {
           email: result.user.email,
           photoURL: result.user.photoURL,
         },
-        { merge: true } // Use merge to avoid overwriting data if user already exists
+        { merge: true }
       );
-      // --- End of new code ---
 
-      setIsAuth(true);
     } catch (err) {
       console.error(err);
-      setErrorMessage("Failed to sign in. Please try again.");
+      if (err.code !== 'auth/popup-closed-by-user') {
+        setErrorMessage("Failed to sign in. Please try again.");
+      }
     }
   };
 
