@@ -1,5 +1,3 @@
-// src/components/Chat.js
-
 import React, { useState, useEffect, useRef } from "react";
 import { db, auth } from "../firebase-config";
 import {
@@ -15,6 +13,8 @@ import {
   setDoc,
 } from "firebase/firestore";
 import { format } from "date-fns";
+import { ConfirmationModal } from "./ConfirmationModal";
+import {Notification} from "./Notification"
 import "../styles/Chat.css";
 
 export const Chat = ({ room, header }) => {
@@ -25,56 +25,59 @@ export const Chat = ({ room, header }) => {
   const messagesListRef = useRef(null);
   const [shouldAutoScroll, setShouldAutoScroll] = useState(true);
   const [hasUnreadMessages, setHasUnreadMessages] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState(false);
+  const [notification, setNotification] = useState('');
 
   useEffect(() => {
-  if (!room) return;
+    if (!room) return;
 
-  setShouldAutoScroll(true);
-  setHasUnreadMessages(false);
+    setShouldAutoScroll(true);
+    setHasUnreadMessages(false);
 
-  let unsubscribe;
+    let unsubscribe;
 
-  const subscribeToMessages = async () => {
-    const currentUser = auth.currentUser;
-    if (!currentUser) return;
+    const subscribeToMessages = async () => {
+      const currentUser = auth.currentUser;
+      if (!currentUser) return;
 
-    const userMetadataRef = doc(db, "userChatMetadata", currentUser.uid);
-    const userMetadataSnap = await getDoc(userMetadataRef);
-    const userMetadata = userMetadataSnap.data();
-    const clearTimestamp = userMetadata?.clearedTimestamps?.[room] || null;
+      const userMetadataRef = doc(db, "userChatMetadata", currentUser.uid);
+      const userMetadataSnap = await getDoc(userMetadataRef);
+      const userMetadata = userMetadataSnap.data();
+      const clearTimestamp = userMetadata?.clearedTimestamps?.[room] || null;
 
-    let messagesQuery = query(
-      messagesRef,
-      where("room", "==", room),
-      orderBy("createdAt")
-    );
-
-    if (clearTimestamp) {
-      messagesQuery = query(
+      let messagesQuery = query(
         messagesRef,
         where("room", "==", room),
-        where("createdAt", ">", clearTimestamp),
         orderBy("createdAt")
       );
-    }
 
-    unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-      const fetchedMessages = snapshot.docs.map((doc) => ({
-        ...doc.data(),
-        id: doc.id,
-      }));
-      setMessages(fetchedMessages);
-    });
-  };
+      if (clearTimestamp) {
+        messagesQuery = query(
+          messagesRef,
+          where("room", "==", room),
+          where("createdAt", ">", clearTimestamp),
+          orderBy("createdAt")
+        );
+      }
 
-  subscribeToMessages();
+      unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
+        const fetchedMessages = snapshot.docs.map((doc) => ({
+          ...doc.data(),
+          id: doc.id,
+        }));
+        setMessages(fetchedMessages);
+      });
+    };
 
-  return () => {
-    if (unsubscribe) {
-      unsubscribe();
-    }
-  };
-}, [room, messagesRef]);
+    subscribeToMessages();
+
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
+  }, [room, messagesRef]);
 
   useEffect(() => {
     const isNearBottom = () => {
@@ -108,12 +111,19 @@ export const Chat = ({ room, header }) => {
     setNewMessage("");
   };
 
-  const formatDate = (timestamp) => timestamp ? format(timestamp.toDate(), "MMMM dd, yyyy") : "";
-  const formatTime = (timestamp) => timestamp ? timestamp.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "";
+  const formatDate = (timestamp) =>
+    timestamp ? format(timestamp.toDate(), "MMMM dd, yyyy") : "";
+  const formatTime = (timestamp) =>
+    timestamp
+      ? timestamp.toDate().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        })
+      : "";
 
   const handleScroll = () => {
     if (!messagesListRef.current) return;
-    
+
     const { scrollTop, scrollHeight, clientHeight } = messagesListRef.current;
     const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
 
@@ -134,11 +144,11 @@ export const Chat = ({ room, header }) => {
   useEffect(() => {
     const messagesContainer = messagesListRef.current;
     if (messagesContainer) {
-      messagesContainer.addEventListener('scroll', handleScroll);
-      return () => messagesContainer.removeEventListener('scroll', handleScroll);
+      messagesContainer.addEventListener("scroll", handleScroll);
+      return () => messagesContainer.removeEventListener("scroll", handleScroll);
     }
   }, [room]);
-  
+
   const groupedMessages = messages.reduce((groups, msg) => {
     const date = formatDate(msg.createdAt);
     if (!groups[date]) groups[date] = [];
@@ -146,56 +156,91 @@ export const Chat = ({ room, header }) => {
     return groups;
   }, {});
 
-  const handleClearChat = async () => {
-    const isConfirmed = window.confirm(
-      "Are you sure you want to clear the chat history? This cannot be undone."
-    );
+  const confirmClearChat = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) return;
 
-    if (isConfirmed) {
-      const currentUser = auth.currentUser;
-      if (!currentUser) return;
+    const userMetadataRef = doc(db, "userChatMetadata", currentUser.uid);
 
-      const userMetadataRef = doc(db, "userChatMetadata", currentUser.uid);
-
-      try {
-        await setDoc(
-          userMetadataRef,
-          {
-            clearedTimestamps: {
-              [room]: serverTimestamp(),
-            },
+    try {
+      await setDoc(
+        userMetadataRef,
+        {
+          clearedTimestamps: {
+            [room]: serverTimestamp(),
           },
-          { merge: true } 
-        );
-        alert("Chat history has been cleared for you.");
-      } catch (error) {
-        console.error("Error clearing chat history: ", error);
-        alert("Failed to clear chat history. Please try again.");
-      }
+        },
+        { merge: true }
+      );
+      setNotification("Chat history has been cleared for you.");
+    } catch (error) {
+      console.error("Error clearing chat history: ", error);
+      setNotification("Failed to clear chat history. Please try again.");
     }
+    setIsConfirmModalOpen(false);
+  };
+
+  const handleClearChat = () => {
+    setIsMenuOpen(false);
+    setIsConfirmModalOpen(true);
   };
 
   return (
     <div className="chat-container">
+      {notification && (
+        <Notification
+          message={notification}
+          onClose={() => setNotification('')}
+        />
+      )}
+      {isConfirmModalOpen && (
+        <ConfirmationModal
+          message="Are you sure you want to clear the chat history? This cannot be undone."
+          onConfirm={confirmClearChat}
+          onCancel={() => setIsConfirmModalOpen(false)}
+        />
+      )}
       <div className="chat-header">
         <h2>{header}</h2>
-        <button onClick={handleClearChat} className="clear-chat-btn" title="Clear Chat History">
-          Clear
-        </button>
+        <div className="chat-options">
+          <button
+            onClick={() => setIsMenuOpen(!isMenuOpen)}
+            className="options-btn"
+          >
+            &#x22EE;
+          </button>
+          {isMenuOpen && (
+            <div className="options-menu">
+              <button onClick={handleClearChat} className="menu-item">
+                Clear Chat
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-      
+
       <div className="messages-list" ref={messagesListRef}>
-        {Object.keys(groupedMessages).map(date => (
+        {Object.keys(groupedMessages).map((date) => (
           <React.Fragment key={date}>
-            <div className="date-separator"><span>{date}</span></div>
+            <div className="date-separator">
+              <span>{date}</span>
+            </div>
             {groupedMessages[date].map((message) => (
-              <div key={message.id} className={`message ${message.uid === auth.currentUser.uid ? "sent" : "received"}`}>
+              <div
+                key={message.id}
+                className={`message ${
+                  message.uid === auth.currentUser.uid ? "sent" : "received"
+                }`}
+              >
                 <div className="message-bubble">
-                  {message.uid !== auth.currentUser.uid && !room.includes('_') && (
-                     <div className="user-name">{message.user}</div>
-                  )}
+                  {message.uid !== auth.currentUser.uid &&
+                    !room.includes("_") && (
+                      <div className="user-name">{message.user}</div>
+                    )}
                   <div className="message-text">{message.text}</div>
-                  <div className="message-time">{formatTime(message.createdAt)}</div>
+                  <div className="message-time">
+                    {formatTime(message.createdAt)}
+                  </div>
                 </div>
               </div>
             ))}
@@ -205,8 +250,8 @@ export const Chat = ({ room, header }) => {
       </div>
 
       {hasUnreadMessages && (
-        <button 
-          className="scroll-to-bottom-btn" 
+        <button
+          className="scroll-to-bottom-btn"
           onClick={scrollToBottom}
           title="Scroll to bottom"
         >
@@ -221,7 +266,9 @@ export const Chat = ({ room, header }) => {
           className="new-message-input"
           placeholder="Type your message..."
         />
-        <button type="submit" className="send-button">Send</button>
+        <button type="submit" className="send-button">
+          Send
+        </button>
       </form>
     </div>
   );
