@@ -37,15 +37,13 @@ export const Chat = ({ room, header }) => {
 
   const [activeMessageMenu, setActiveMessageMenu] = useState(null);
   
-  // This ref tracks if the user has manually scrolled up
-  const userHasScrolledUp = useRef(false);
+
 
   // This effect handles fetching messages when the room changes
   useEffect(() => {
     if (!room) return;
 
     // Reset scroll state for new chat room
-    userHasScrolledUp.current = false;
     setHasUnreadMessages(false);
 
     const currentUser = auth.currentUser;
@@ -74,16 +72,17 @@ export const Chat = ({ room, header }) => {
       }
 
       const unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
-        const isInitialLoad = messages.length === 0;
+        const list = messagesListRef.current;
+        const isScrolledUp = list && (list.scrollHeight - list.scrollTop - list.clientHeight > 200);
+
         const fetchedMessages = snapshot.docs.map((doc) => ({
           ...doc.data(),
           id: doc.id,
         }));
         setMessages(fetchedMessages);
 
-        // Show "new messages" button only if new messages arrive AND user has scrolled up
         const hasNewMessages = snapshot.docChanges().some(change => change.type === 'added');
-        if (userHasScrolledUp.current && hasNewMessages && !isInitialLoad) {
+        if (isScrolledUp && hasNewMessages) {
             setHasUnreadMessages(true);
         }
       });
@@ -102,9 +101,12 @@ export const Chat = ({ room, header }) => {
   // This effect handles the automatic scrolling
   useEffect(() => {
     const list = messagesListRef.current;
-    if (list && !userHasScrolledUp.current) {
-        // By directly setting scrollTop, we avoid fighting with the user's scroll
+    if (list) {
+      const { scrollTop, scrollHeight, clientHeight } = list;
+      // Only auto-scroll if the user is near the bottom
+      if (scrollHeight - scrollTop - clientHeight < 200) { // 200px buffer
         list.scrollTop = list.scrollHeight;
+      }
     }
   }, [messages]);
 
@@ -112,7 +114,6 @@ export const Chat = ({ room, header }) => {
     event.preventDefault();
     if (newMessage.trim() === "") return;
 
-    userHasScrolledUp.current = false;
     setHasUnreadMessages(false);
 
     await addDoc(messagesRef, {
@@ -132,26 +133,9 @@ export const Chat = ({ room, header }) => {
       ? timestamp.toDate().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })
       : "";
 
-  const handleScroll = () => {
-    const list = messagesListRef.current;
-    if (!list) return;
 
-    const { scrollTop, scrollHeight, clientHeight } = list;
-    const isAtBottom = scrollHeight - scrollTop - clientHeight < 5; // Using a small buffer
-
-    // If the user scrolls up, set the ref to true.
-    // It will only be reset by sending a message or clicking the "scroll to bottom" button.
-    if (!isAtBottom) {
-        userHasScrolledUp.current = true;
-    } else {
-        // If user scrolls back to the bottom, hide the notification
-        userHasScrolledUp.current = false;
-        setHasUnreadMessages(false);
-    }
-  };
 
   const scrollToBottom = () => {
-    userHasScrolledUp.current = false;
     setHasUnreadMessages(false);
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
@@ -249,7 +233,7 @@ export const Chat = ({ room, header }) => {
         </div>
       </div>
       
-      <div className="messages-list" ref={messagesListRef} onScroll={handleScroll}>
+      <div className="messages-list" ref={messagesListRef}>
         {Object.keys(groupedMessages).map(date => (
           <React.Fragment key={date}>
             <div className="date-separator"><span>{date}</span></div>
