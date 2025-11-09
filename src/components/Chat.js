@@ -12,6 +12,8 @@ import {
   getDoc,
   setDoc,
   deleteDoc,
+  updateDoc,
+  arrayUnion,
 } from "firebase/firestore";
 import { format } from "date-fns";
 import { ConfirmationModal } from "./ConfirmationModal";
@@ -78,7 +80,8 @@ export const Chat = ({ room, header }) => {
         const fetchedMessages = snapshot.docs.map((doc) => ({
           ...doc.data(),
           id: doc.id,
-        }));
+        }))
+        .filter((msg) => !msg.hiddenBy || !msg.hiddenBy.includes(currentUser.uid));
         setMessages(fetchedMessages);
 
         const hasNewMessages = snapshot.docChanges().some(change => change.type === 'added');
@@ -104,7 +107,7 @@ export const Chat = ({ room, header }) => {
     if (list) {
       const { scrollTop, scrollHeight, clientHeight } = list;
       // Only auto-scroll if the user is near the bottom
-      if (scrollHeight - scrollTop - clientHeight < 200) { // 200px buffer
+      if (scrollHeight - scrollTop - clientHeight < 50) { // 200px buffer
         list.scrollTop = list.scrollHeight;
       }
     }
@@ -159,7 +162,9 @@ export const Chat = ({ room, header }) => {
   const confirmDeleteMessage = async (messageId) => {
     try {
       const messageRef = doc(db, "messages", messageId);
-      await deleteDoc(messageRef);
+      await updateDoc(messageRef, {
+        hiddenBy: arrayUnion(auth.currentUser.uid)
+      });
       setNotification("Message deleted successfully.");
     } catch (error) {
       console.error("Error deleting message: ", error);
@@ -239,9 +244,7 @@ export const Chat = ({ room, header }) => {
             <div className="date-separator"><span>{date}</span></div>
             {groupedMessages[date].map((message) => (
               <div key={message.id} className={`message ${message.uid === auth.currentUser.uid ? "sent" : "received"}`}>
-                {message.uid === auth.currentUser.uid && (
-                  <button className="message-options-btn" onClick={(e) => handleMessageMenu(e, message.id)}>&#x22EE;</button>
-                )}
+                <button className="message-options-btn" onClick={(e) => handleMessageMenu(e, message.id)}>&#x22EE;</button>
                 <div className="message-bubble">
                   {message.uid !== auth.currentUser.uid && !room.includes('_') && (
                      <div className="user-name">{message.user}</div>
