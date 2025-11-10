@@ -64,3 +64,74 @@
   color: white;
   font-weight: bold;
 }
+
+/* ... existing styles ... */
+
+.room-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-right: 5px !important; /* Override default li padding for right side */
+}
+
+.room-name {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.room-options {
+  position: relative;
+}
+
+.room-menu-btn {
+  background: none;
+  border: none;
+  color: #999;
+  font-size: 1.2em;
+  font-weight: bold;
+  padding: 2px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.2s, background-color 0.2s;
+}
+
+.room-item:hover .room-menu-btn,
+.room-menu-btn:focus, .room-menu-btn.active {
+  opacity: 1; /* Show on hover */
+}
+
+.room-menu-btn:hover {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+.room-menu-dropdown {
+  position: fixed; /* Changed from absolute to fixed */
+  background-color: white;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+  z-index: 9999; /* Ensure it's on top of everything */
+  min-width: 130px;
+  overflow: hidden;
+  transform: translateX(-100%); /* Shift it left so its right edge aligns with the cursor X coordinate */
+}
+
+.room-menu-dropdown button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 10px 15px;
+  border: none;
+  background: none;
+  color: #d9534f;
+  cursor: pointer;
+  font-size: 0.95em;
+  white-space: nowrap;
+}
+
+.room-menu-dropdown button:hover {
+  background-color: #f5f5f5;
+}

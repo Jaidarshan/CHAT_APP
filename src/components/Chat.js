@@ -11,7 +11,6 @@ import {
   doc,
   getDoc,
   setDoc,
-  deleteDoc,
   updateDoc,
   arrayUnion,
 } from "firebase/firestore";
@@ -198,11 +197,17 @@ export const Chat = ({ room, header }) => {
 
   const handleMessageMenu = (event, messageId) => {
     event.preventDefault();
+    event.stopPropagation();
     const rect = event.currentTarget.getBoundingClientRect();
+    
+    // Calculate X position: shift it left by ~150px so it doesn't go off-screen on the right.
+    // We use Math.max to ensure it doesn't go off-screen on the left either.
+    const x = Math.max(10, rect.right - 150);
+
     setActiveMessageMenu({
       id: messageId,
-      x: rect.left - 150,
-      y: rect.top + window.scrollY,
+      x: x,
+      y: rect.bottom + 5, // Add a small 5px gap below the button
     });
   };
 
@@ -219,12 +224,11 @@ export const Chat = ({ room, header }) => {
         />
       )}
       {activeMessageMenu && (
-        <div style={{ position: 'absolute', top: activeMessageMenu.y, left: activeMessageMenu.x, zIndex: 101 }}>
-          <MessageMenu
-            onDelete={() => requestDeleteMessage(activeMessageMenu.id)}
-            onClose={() => setActiveMessageMenu(null)}
-          />
-        </div>
+        <MessageMenu
+          onDelete={() => requestDeleteMessage(activeMessageMenu.id)}
+          onClose={() => setActiveMessageMenu(null)}
+          coordinates={activeMessageMenu}
+        />
       )}
       <div className="chat-header">
         <h2>{header}</h2>
